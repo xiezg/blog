@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <title></title>
+        <meta charset="utf-8">
+        <!-- 引入 ECharts 文件 -->
+        <script src="dist/echarts.min.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+        <script>
+            mermaid.initialize({
+                startOnLoad: true
+            });
+        </script>
+        <link rel="stylesheet" type="text/css" href="css/1.css"/>
+    </head>
+
+    <body>
+        <div id="main" style="width:80%;height:400px;"></div>
+        <script type="text/javascript">
+            // 基于准备好的dom，初始化echarts实例
+            var myChart = echarts.init(document.getElementById('main'));
+
+            // 指定图表的配置项和数据
+            var option = {
+                dataset: {
+                    source: [
+                        ['product', '总支出'],
+                        ['2021-01-14', 134.6],
+                        ['2021-01-15', 24.6],
+                        ['2021-01-16', 4.6],
+                        ['2021-01-17', 64.6],
+                        ['2021-01-18', 64.6],
+                        ['2021-01-19', 64.6],
+                        ['2021-01-20', 64.6],
+                        ['2021-01-21', 64.6],
+                        ['2021-01-22', 64.6],
+                        ['2021-01-23', 64.6],
+                    ]
+                },
+                title: {
+                    text: '日常开支'
+                },
+                tooltip: {},
+                legend: {},
+                xAxis: {
+                    // category 类目轴，适用于离散的类目数据。
+                    // 为该类型时类目数据可自动从 series.data 或 dataset.source 中取，或者可通过 xAxis.data 设置类目数据。
+                    // 声明一个 X 轴，类目轴（category）。默认情况下，类目轴对应到 dataset 第一列。
+                    type: 'category'
+                },
+                yAxis: {},
+                series: [{
+                    type: 'line',
+                    smooth: true
+                }]
+            };
+
+            // 使用刚指定的配置项和数据显示图表。
+            myChart.setOption(option);
+        </script>
+    </body>
+
+</html>

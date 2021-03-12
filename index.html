@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <!-- 引入 ECharts 文件 -->
+    <!-- <script src="dist/echarts.min.js"></script> -->
+    <link rel="stylesheet" type="text/css" href="css/1.css"/>
+    <script src="js/mermaid.min.js"></script>
+    <script>
+
+
+        function list_daily_task() {
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "http://127.0.0.1:8081/daka/api/daily/task/list", true)
+            xhr.withCredentials = true;
+            xhr.send(null);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+
+                    var obj = JSON.parse(xhr.responseText)
+
+                    for (var item of obj.Data) {
+                        add_task(item.id, item.task_msg)
+                    }
+                }
+            }
+        }
+
+
+        function get_task_txt(task_id, editor) {
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "http://127.0.0.1:8081/daka/api/daily/task/list", true)
+            xhr.withCredentials = true;
+
+            var req = {};
+            req.task_id = task_id;
+            xhr.send(JSON.stringify(req));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+
+                    var obj = JSON.parse(xhr.responseText)
+                    editor.value = obj.Data[0].task_msg;
+                }
+            }
+        }
+
+        function set_task_txt(task_id, editor) {
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "http://127.0.0.1:8081/daka/api/daily/task/set", true)
+            xhr.withCredentials = true;
+
+            var req = {};
+            req.task_id = task_id;
+            req.task_msg = editor.value;
+            xhr.send(JSON.stringify(req));
+        }
+
+        function enable_gantt_edit(taskid, obj) {
+
+            var old = obj.style.display
+
+            if (old == "none" || old == "") {
+
+                get_task_txt(taskid, obj.firstChild)
+                obj.style.display = "block";
+
+
+            } else {
+                obj.style.display = "none"
+            }
+        }
+
+        function add_task(task_id, task_txt) {
+
+            var mermaiddiv = document.createElement("div");
+            mermaiddiv.setAttribute("class", "mermaid");
+            mermaiddiv.textContent = task_txt;
+            mermaiddiv.setAttribute("id", task_id)
+
+            var btn = document.createElement("button");
+            btn.setAttribute("type", "button")
+            btn.setAttribute("onclick", "enable_gantt_edit(this.task_id,this.gannt_edit)")
+            btn.innerText = "编辑"
+
+            var div1 = document.createElement("div")
+            div1.style = "float:right;"
+
+            div1.appendChild(btn)
+
+            var rightDiv = document.createElement("div")
+            rightDiv.appendChild(div1)
+            rightDiv.appendChild(mermaiddiv)
+            rightDiv.setAttribute("class", "right")
+
+
+            var leftDiv = document.createElement("div")
+            leftDiv.setAttribute("class", "gannt_edit left")
+
+            leftDiv.addEventListener( "keyup", function (event) {
+                leftDiv.style.display = "none"
+            } )
+
+            var editor = document.createElement("textarea");
+
+//            editor.addEventListener( "keypress", function (event) {
+//                console.log(event);
+//            } )
+//            editor.addEventListener( "keyup", function (event) {
+//                console.log(event);
+//            } )
+//            editor.addEventListener( "keydown", function (event) {
+//                console.log(event);
+//            } )
+            editor.oninput = function (event) {
+                set_task_txt(task_id, editor)
+
+//                var insertSvg = function(svgCode, bindFunctions){
+//
+//                    var element = document.querySelector("#"+ task_id );
+//
+//                    element.innerHTML = svgCode;
+//                };
+//
+//                mermaid.mermaidAPI.render( ""+task_id , editor.value, insertSvg, null);
+            }
+
+            leftDiv.appendChild(editor)
+
+            btn.gannt_edit = leftDiv;
+            btn.task_id = task_id;
+
+            var conDiv = document.createElement("div")
+            conDiv.setAttribute("class", "gantt_item container")
+            conDiv.appendChild(leftDiv)
+            conDiv.appendChild(rightDiv)
+
+            //document.getElementById("taskList").insertBefore(conDiv, document.getElementById("taskList").firstChild)
+
+            document.getElementById("taskList").appendChild(conDiv)
+            mermaid.init()
+        }
+
+        function login() {
+            var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+            xhr.open("POST", "http://127.0.0.1:8081/daka/api/login", true)
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+            // xhr.setRequestHeader( "Access-Control-Allow-Origin", "*" )
+            xhr.send("name=123&password=123");
+
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    list_daily_task()
+                }
+            }
+        }
+
+        window.onload = function () {
+
+            mermaid.initialize({
+                startOnLoad: true,
+                logLevel: 1,
+                gantt: {
+                    axisFormat: '%m/%d',
+                }
+            });
+
+            login()
+        }
+    </script>
+
+</head>
+
+<body>
+<div class="gantt_body">
+    <div class="mermaid gantt_overall">
+        gantt
+        dateFormat YYYY-MM-DD
+        excludes weekends
+        axisFormat %m/%d
+
+        section TiKV
+        TiKV plan time : crit,done,2021-02-18,2021-03-15
+        TiKV技术分享 : 2021-02-18,2d
+        TiKV yaml调整 : 1d
+        TiKV测试方案 : 3d
+        TiKV备份方案 : 3d
+        TiKV监控方案 : 3d
+
+        section C++ SDK
+        C++ SDK plan time : crit,done,2021-02-18,2021-03-10
+        C++ SDK : 2021-02-18,10d
+    </div>
+    <div id="taskList" class="gantt_list">
+
+    </div>
+
+</div>
+
+</body>
+
+</html>
