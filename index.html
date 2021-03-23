@@ -24,7 +24,7 @@
                     var obj = JSON.parse(xhr.responseText)
 
                     for (var item of obj.Data) {
-                        add_task(item.id, item.task_msg)
+                        add_task(item.id, item.task_msg, item.task_date)
                     }
                 }
             }
@@ -61,6 +61,10 @@
             xhr.send(JSON.stringify(req));
         }
 
+        function renderMermaid() {
+            mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+        }
+
         function enable_gantt_edit(taskid, obj) {
 
             var old = obj.style.display
@@ -76,7 +80,19 @@
             }
         }
 
-        function add_task(task_id, task_txt) {
+        function DateDiffNow(sDate1) {    //sDate1和sDate2是2006-12-18格式
+
+            var aDate, oDate1, oDate2, iDays
+            oDate1 = new Date("2020-11-16");
+
+            aDate = sDate1.split("-")
+            oDate2 = new Date(aDate[0] + '-' + aDate[1] + '-' + aDate[2])
+            iDays = parseInt(Math.abs(oDate1 - oDate2) / 1000 / 60 / 60 / 24) //把相差的毫秒数转换为天数
+
+            return parseInt(iDays / 30) + "m " + iDays % 30 + "d"
+        }
+
+        function add_task(task_id, task_txt, task_date) {
 
             var mermaiddiv = document.createElement("div");
             mermaiddiv.setAttribute("class", "mermaid");
@@ -88,47 +104,63 @@
             btn.setAttribute("onclick", "enable_gantt_edit(this.task_id,this.gannt_edit)")
             btn.innerText = "编辑"
 
+            var divTitle = document.createElement("div")
+            divTitle.setAttribute("class", "ganntTitle")
+            divTitle.innerText = task_date + " " + DateDiffNow(task_date);
+
             var div1 = document.createElement("div")
             div1.style = "float:right;"
 
             div1.appendChild(btn)
 
             var rightDiv = document.createElement("div")
+            rightDiv.appendChild(divTitle)
             rightDiv.appendChild(div1)
             rightDiv.appendChild(mermaiddiv)
             rightDiv.setAttribute("class", "right")
 
-
             var leftDiv = document.createElement("div")
             leftDiv.setAttribute("class", "gannt_edit left")
 
-            leftDiv.addEventListener( "keyup", function (event) {
+            leftDiv.addEventListener("keyup", function (event) {
+                if (event.code != "Escape") {
+                    return
+                }
+
                 leftDiv.style.display = "none"
-            } )
+            })
 
             var editor = document.createElement("textarea");
 
-//            editor.addEventListener( "keypress", function (event) {
-//                console.log(event);
-//            } )
-//            editor.addEventListener( "keyup", function (event) {
-//                console.log(event);
-//            } )
-//            editor.addEventListener( "keydown", function (event) {
-//                console.log(event);
-//            } )
             editor.oninput = function (event) {
-                set_task_txt(task_id, editor)
+                set_task_txt(task_id, editor);
 
-//                var insertSvg = function(svgCode, bindFunctions){
+//                var element = document.getElementById( task_id )
+//                var rst = mermaid.render(element.id, editor.value, function(svgCode,bindFunctions){
+//                    console.log(svgCode)
+//                    element.innerHTML = svgCode
 //
-//                    var element = document.querySelector("#"+ task_id );
-//
-//                    element.innerHTML = svgCode;
-//                };
-//
-//                mermaid.mermaidAPI.render( ""+task_id , editor.value, insertSvg, null);
+//                    var newobj = document.createElement("div");
+//                    newobj.setAttribute("class", "mermaid");
+//                    newobj.innerHTML = svgCode;
+//                    newobj.setAttribute("id", element.id)
+//                    rightDiv.appendChild(newobj)
+//                })
+
             }
+
+            rightDiv.addEventListener("dblclick", function () {
+                get_task_txt(task_id, editor)
+                leftDiv.style.display = "block"
+            })
+
+            rightDiv.addEventListener("keyup", function (event) {
+                if (event.code != "Escape") {
+                    return
+                }
+
+                leftDiv.style.display = "none"
+            })
 
             leftDiv.appendChild(editor)
 
@@ -165,7 +197,7 @@
         window.onload = function () {
 
             mermaid.initialize({
-                startOnLoad: true,
+                startOnLoad: false,
                 logLevel: 1,
                 gantt: {
                     axisFormat: '%m/%d',
@@ -179,29 +211,33 @@
 </head>
 
 <body>
-<div class="gantt_body">
-    <div class="mermaid gantt_overall">
-        gantt
-        dateFormat YYYY-MM-DD
-        excludes weekends
-        axisFormat %m/%d
+<div style="height: 30px"></div>
+<div class="container">
+    <div class="left" style="width: 30%"></div>
+    <div class="gantt_body right">
+        <div class="mermaid gantt_overall">
+            gantt
+            dateFormat YYYY-MM-DD
+            excludes weekends
+            axisFormat %m/%d
 
-        section TiKV
-        TiKV plan time : crit,done,2021-02-18,2021-03-15
-        TiKV技术分享 : 2021-02-18,2d
-        TiKV yaml调整 : 1d
-        TiKV测试方案 : 3d
-        TiKV备份方案 : 3d
-        TiKV监控方案 : 3d
+            section TiKV
+            TiKV plan time : crit,done,2021-02-18,2021-03-15
+            TiKV技术分享 : 2021-02-18,2d
+            TiKV yaml调整 : 1d
+            TiKV测试方案 : 3d
+            TiKV备份方案 : 3d
+            TiKV监控方案 : 3d
 
-        section C++ SDK
-        C++ SDK plan time : crit,done,2021-02-18,2021-03-10
-        C++ SDK : 2021-02-18,10d
+            section C++ SDK
+            C++ SDK plan time : crit,done,2021-02-18,2021-03-10
+            C++ SDK : 2021-02-18,10d
+        </div>
+        <div id="taskList" class="gantt_list">
+
+        </div>
+
     </div>
-    <div id="taskList" class="gantt_list">
-
-    </div>
-
 </div>
 
 </body>

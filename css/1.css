@@ -66,3 +66,8 @@
     margin-right: 35px;
 }
 
+.ganntTitle{
+    width: 120px;
+    background-color: #dddddd;
+    border-radius: 6px;
+}
