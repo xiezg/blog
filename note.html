@@ -1,3 +1,172 @@
+<!DOCTYPE html>
 <html>
-    
+
+<head>
+    <title></title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" type="text/css" href="css/note.css"/>
+    <script>
+
+        function update_fn(str){
+            var element = document.getElementById( "1" )
+            element.innerHTML= str
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "http://127.0.0.1:8081/daka/api/note/update", true)
+            xhr.withCredentials = true;
+
+            var req = {};
+            req.id = element.id;
+            req.txt = str;
+            xhr.send(JSON.stringify(req));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+
+                    var obj = JSON.parse(xhr.responseText)
+//                    editor.value = obj.Data[0].task_msg;
+                }
+            }
+        }
+
+        function add_note_summary(obj){
+
+            var right = document.createElement('div')
+            right.innerHTML = obj.txt;
+            right.setAttribute("class", "right");
+
+            var textarea = document.createElement('textarea')
+            textarea.setAttribute("class", "note_editor");
+
+            var editor = document.createElement( 'div' );
+            editor.setAttribute( "class", "note_div" )
+            editor.appendChild(textarea);
+
+            var left = document.createElement('div')
+            left.setAttribute("class", "left");
+            left.appendChild(editor)
+            left.addEventListener("keyup", function (event) {
+                if (event.code != "Escape") {
+                    return
+                }
+
+                editor.style.display = "none"
+            })
+
+            var note_summary = document.createElement('div')
+            note_summary.setAttribute("class", "container note_summary");
+            note_summary.appendChild( left );
+            note_summary.appendChild(right);
+
+            note_summary.addEventListener("dblclick", function () {
+                editor.style.display = "block";
+
+                get_my_note( obj.id, textarea )
+            })
+
+            var note_title = document.createElement( 'div' );
+            note_title.setAttribute("class", "note_title");
+            note_title.textContent = obj.title;
+
+            var note_time = document.createElement( 'div' );
+            note_time.setAttribute("class", "note_time");
+            note_time.textContent = obj.last_update;
+
+            var note_keyword = document.createElement( 'div' );
+            note_keyword.setAttribute("class", "note_keyword");
+            note_keyword.textContent = obj.key_word;
+
+
+            var note_item = document.createElement( 'div' );
+            note_item.setAttribute("class", "note_item");
+            note_item.appendChild( note_title );
+            note_item.appendChild( note_time );
+            note_item.appendChild( note_keyword );
+            note_item.appendChild( note_summary );
+
+            document.getElementById("note_list").appendChild(note_item)
+        }
+
+        function get_my_note( id, editor ){
+            var xhr = new XMLHttpRequest();
+            xhr.open("POST", "http://127.0.0.1:8081/daka/api/note/list", true)
+            xhr.withCredentials = true;
+
+            var req = {};
+            req.note_id = id;
+            xhr.send(JSON.stringify(req));
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+
+                    var obj = JSON.parse(xhr.responseText)
+
+                    editor.value = obj.Data[0].txt;
+                }
+            }
+        }
+
+        function list_my_note(){
+
+            var xhr = new XMLHttpRequest();
+            xhr.open("GET", "http://127.0.0.1:8081/daka/api/note/list", true)
+            xhr.withCredentials = true;
+            xhr.send(null);
+
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState == 4 && xhr.status == 200) {
+
+                    var obj = JSON.parse(xhr.responseText)
+
+                    for (var item of obj.Data) {
+                        add_note_summary( item )
+                    }
+                }
+            }
+        }
+
+        function login() {
+            var xhr = new XMLHttpRequest();
+            xhr.withCredentials = true;
+            xhr.open("POST", "http://127.0.0.1:8081/daka/api/login", true)
+            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+            // xhr.setRequestHeader( "Access-Control-Allow-Origin", "*" )
+            xhr.send("name=123&password=123");
+
+            xhr.onreadystatechange = function () {
+
+                if (xhr.readyState == 4 && xhr.status == 200) {
+                    list_my_note()
+                }
+            }
+        }
+
+        window.onload = function () {
+
+            //login()
+        }
+
+    </script>
+</head>
+
+<body>
+
+<!--<div class="container">-->
+    <!--<div class="keyword_list left"></div>-->
+    <!--<div id="note_list" class="note_list right">-->
+
+    <!--</div>-->
+<!--</div>-->
+
+<div class="container">
+    <div class="left">
+
+    </div>
+    <div class="right">
+
+    </div>
+</div>
+
+</body>
+
 </html>
