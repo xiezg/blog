@@ -89,7 +89,8 @@
             oDate2 = new Date(aDate[0] + '-' + aDate[1] + '-' + aDate[2])
             iDays = parseInt(Math.abs(oDate1 - oDate2) / 1000 / 60 / 60 / 24) //把相差的毫秒数转换为天数
 
-            return parseInt(iDays / 30) + "m " + iDays % 30 + "d"
+//            return iDays
+            return parseInt(iDays / 30) + "M " + iDays % 30 + "d"
         }
 
         function add_task(task_id, task_txt, task_date) {
@@ -221,24 +222,22 @@
             excludes weekends
             axisFormat %m/%d
 
-            section TiKV
-            TiKV plan time : crit,done,2021-02-18,2021-03-15
-            TiKV技术分享 : 2021-02-18,2d
-            TiKV yaml调整 : 1d
-            TiKV测试方案 : 3d
-            TiKV备份方案 : 3d
-            TiKV监控方案 : 3d
-
             section C++ SDK
-            C++ SDK plan time : crit,done,2021-02-18,2021-03-31
-            C++ SDK : 2021-02-18,29d
+            SDK第二版:crit,done, 2021-04-06,6d
+            SDK添加日志、错误处理:2021-04-06,1d
+            SDK添加memory/local cache:1d
+            SDK添加整体内容变化通知:1d
+            SDK添加KV字段变化通知:1d
+            SDK添加YAML字段变化通知:1d
+            SDK添加YAML字段变化通知:1d
 
-            section 导乘导航双机热备
-            测试环境搭建:done,2021-03-08,1d
-            MySQL双机热备上线:2021-03-25,1d
+            SDK测试:1d
 
-            section 首都机场MySQL同步Oracle
-            MySQL8.0企业版调研: done,2021-03-16,2021-03-22
+
+            section MySQL主从方案优化
+            方案参数化: 2021-04-01,1d
+            修复备份清理策略:1d
+
 
         </div>
         <div id="taskList" class="gantt_list">

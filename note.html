@@ -5,84 +5,90 @@
     <title></title>
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="css/note.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
 
-        function update_fn(str){
-            var element = document.getElementById( "1" )
-            element.innerHTML= str
-
+        function update_note( id, title, keyword, txt ){
             var xhr = new XMLHttpRequest();
             xhr.open("POST", "http://127.0.0.1:8081/daka/api/note/update", true)
             xhr.withCredentials = true;
 
             var req = {};
-            req.id = element.id;
-            req.txt = str;
+            req.id = id;
+            req.title=title
+            req.key_word=keyword
+            req.txt = txt;
             xhr.send(JSON.stringify(req));
 
             xhr.onreadystatechange = function () {
                 if (xhr.readyState == 4 && xhr.status == 200) {
-
                     var obj = JSON.parse(xhr.responseText)
-//                    editor.value = obj.Data[0].task_msg;
                 }
             }
         }
 
         function add_note_summary(obj){
 
-            var right = document.createElement('div')
-            right.innerHTML = obj.txt;
-            right.setAttribute("class", "right");
+            var note_id = obj.id;
+
+            var note_txt = document.createElement('div')
+            note_txt.setAttribute( "class", "note_txt" );
+            note_txt.innerHTML = marked( obj.html );
+
+            var note_keyword = document.createElement('div')
+            note_keyword.setAttribute( "class", "note_keyword" );
+            note_keyword.innerHTML = obj.key_word
+
+            var note_date = document.createElement('div')
+            note_date.setAttribute( "class", "note_date" );
+            note_date.innerHTML = obj.last_update;
+
+            var note_title_editor = document.createElement("input")
+            var note_title = document.createElement('div')
+            note_title.setAttribute( "class", "note_title" );
+            note_title.innerHTML = obj.title;
+
+            var note_view = document.createElement('div')
+            note_view.setAttribute( "class", "note_view" );
+
+            note_view.appendChild( note_title )
+            note_view.appendChild( note_keyword )
+            note_view.appendChild( note_date )
+            note_view.appendChild( note_txt )
 
             var textarea = document.createElement('textarea')
-            textarea.setAttribute("class", "note_editor");
+            textarea.oninput = function (event) {
+                note_txt.innerHTML = marked( textarea.value );
+            }
 
-            var editor = document.createElement( 'div' );
-            editor.setAttribute( "class", "note_div" )
-            editor.appendChild(textarea);
+            var note_editor = document.createElement('div')
+            note_editor.setAttribute( "class", "note_editor" );
+            note_editor.appendChild( textarea )
 
-            var left = document.createElement('div')
-            left.setAttribute("class", "left");
-            left.appendChild(editor)
-            left.addEventListener("keyup", function (event) {
+            var note_item = document.createElement('div')
+            note_item.setAttribute("class", "note_item")
+            note_item.appendChild( note_editor )
+            note_item.appendChild(note_view)
+
+            note_editor.addEventListener("keyup", function (event) {
                 if (event.code != "Escape") {
                     return
                 }
 
-                editor.style.display = "none"
+                update_note( note_id, null, null, textarea.value );
+
+                note_editor.style.display = "none"
+                note_view.style.display = "block"
             })
 
-            var note_summary = document.createElement('div')
-            note_summary.setAttribute("class", "container note_summary");
-            note_summary.appendChild( left );
-            note_summary.appendChild(right);
+            note_txt.addEventListener("dblclick", function () {
+                note_editor.style.display = "block";
+                note_view.style.display = "none"
 
-            note_summary.addEventListener("dblclick", function () {
-                editor.style.display = "block";
-
-                get_my_note( obj.id, textarea )
+                if( textarea.value == "" ){
+                    textarea.value = obj.txt;
+                }
             })
-
-            var note_title = document.createElement( 'div' );
-            note_title.setAttribute("class", "note_title");
-            note_title.textContent = obj.title;
-
-            var note_time = document.createElement( 'div' );
-            note_time.setAttribute("class", "note_time");
-            note_time.textContent = obj.last_update;
-
-            var note_keyword = document.createElement( 'div' );
-            note_keyword.setAttribute("class", "note_keyword");
-            note_keyword.textContent = obj.key_word;
-
-
-            var note_item = document.createElement( 'div' );
-            note_item.setAttribute("class", "note_item");
-            note_item.appendChild( note_title );
-            note_item.appendChild( note_time );
-            note_item.appendChild( note_keyword );
-            note_item.appendChild( note_summary );
 
             document.getElementById("note_list").appendChild(note_item)
         }
@@ -143,7 +149,7 @@
 
         window.onload = function () {
 
-            //login()
+            login()
         }
 
     </script>
@@ -151,21 +157,36 @@
 
 <body>
 
-<!--<div class="container">-->
-    <!--<div class="keyword_list left"></div>-->
-    <!--<div id="note_list" class="note_list right">-->
 
-    <!--</div>-->
-<!--</div>-->
+<div class="wrapper">
+    <header>I'm a 30px tall header</header>
+    <main>
+        <div class="wrapper_row">
+            <div class="left">
+                <div class="key_word">ySQL</div>
+                <div class="key_word">数据库</div>
+                <div class="key_word">oracle</div>
+                <div class="key_word">Nginx</div>
+                <div class="key_word">主从</div>
+                <div class="key_word">Docker</div>
+                <div class="key_word">Docker compuse</div>
+                <div class="key_word">Golang</div>
+                <div class="key_word">垃圾回收</div>
+                <div class="key_word">c</div>
+                <div class="key_word">算法</div>
+                <div class="key_word">YAML</div>
+                <div class="key_word">JSON</div>
+            </div>
+            <div class="right">
 
-<div class="container">
-    <div class="left">
-
-    </div>
-    <div class="right">
-
-    </div>
+                <div class="note_list" id="note_list">
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>I'm a 30px tall footer</footer>
 </div>
+
 
 </body>
 

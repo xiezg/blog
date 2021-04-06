@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style>
+        #out{
+            display: flex;
+            border: 1px solid #00ff00;
+
+        }
+
+        #s1{
+            width: 200px;
+            flex-grow: 0;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+<div id="out">
+<div id="s1"></div>
+    <div id="s2">
+        <pre>
+        Usage:	docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+
+    Run a command in a new container
+
+    Options:
+    --add-host list                  Add a custom host-to-IP mapping (host:ip)
+    -a, --attach list                    Attach to STDIN, STDOUT or STDERR
+    --blkio-weight uint16            Block IO (relative weight), between 10 and 1000, or 0 to disable (default 0)
+    --blkio-weight-device list       Block IO weight (relative device weight) (default [])
+    --cap-add list                   Add Linux capabilities
+    --cap-drop list                  Drop Linux capabilities
+    --cgroup-parent string           Optional parent cgroup for the container
+    --cidfile string                 Write the container ID to the file
+    --cpu-period int                 Limit CPU CFS (Completely Fair Scheduler) period
+    --cpu-quota int                  Limit CPU CFS (Completely Fair Scheduler) quota
+    --cpu-rt-period int              Limit CPU real-time period in microseconds
+    --cpu-rt-runtime int             Limit CPU real-time runtime in microseconds
+    -c, --cpu-shares int                 CPU shares (relative weight)
+    --cpus decimal                   Number of CPUs
+    --cpuset-cpus string             CPUs in which to allow execution (0-3, 0,1)
+    --cpuset-mems string             MEMs in which to allow execution (0-3, 0,1)
+    -d, --detach                         Run container in background and print
+
+
+    1) start three mysql-gr nodes with docker, by following command.
+
+    docker-clean stop && \
+    docker network create group1 && \
+    docker run -d \
+    --name=node1 --net=group1 \
+    -e MYSQL_ROOT_PASSWORD=aTestPwd \
+    -e MYSQL_REPLICATION_USER=rpl_user \
+    -e MYSQL_REPLICATION_PASSWORD=rpl_pass \
+    -p 13306:3306 \
+    mysql:5.7.32 \
+    --group_replication_group_seeds='node2:6606,node3:6606' \
+    --server-id=1 && \
+    sleep 2 && \
+    docker run -d \
+    --name=node2 --net=group1 \
+    -e MYSQL_ROOT_PASSWORD=aTestPwd \
+    -e MYSQL_REPLICATION_USER=rpl_user \
+    -e MYSQL_REPLICATION_PASSWORD=rpl_pass \
+    -p 13307:3306 \
+    mysql:5.7.32 \
+    --group_replication_group_seeds='node1:6606,node3:6606' \
+    --server-id=2 && \
+    sleep 2 && \
+    docker run -d \
+    --name=node3 --net=group1 \
+    -e MYSQL_ROOT_PASSWORD=aTestPwd \
+    -e MYSQL_REPLICATION_USER=rpl_user \
+    -e MYSQL_REPLICATION_PASSWORD=rpl_pass \
+    -p 13308:3306 \
+    mysql:5.7.32 \
+    --group_replication_group_seeds='node1:6606,node2:6606' \
+    --server-id=3
+
+
+
+
+    2) create test database named "repl_test"
+    CREATE DATABASE `repl_test` /*!40100 DEFAULT CHARACTER SET utf8 */
+
+    3) using percona sysbench docker image to prepare data.
+
+    docker run --rm -it --net=group1 \
+    percona/sysbench \
+    -c '/opt/sysbench/sysbench \
+    --test=oltp \
+    --db-driver=mysql \
+    --mysql-engine-trx=yes \
+    --mysql-table-engine=innodb \
+    --mysql-host=node1 \
+    --mysql-user=root \
+    --mysql-password=aTestPwd \
+    --mysql-db=repl_test \
+    --oltp-auto-inc=on \
+    --test=/opt/tests/db/oltp.lua \
+    --oltp-table-size=5000 \
+    --oltp-tables-count=8 \
+    prepare'
+
+    4) using sysbench to do update query with node1.
+
+    docker run --rm -it --net=group1 \
+    percona/sysbench \
+    -c '/opt/sysbench/sysbench \
+    --test=oltp \
+    --db-driver=mysql \
+    --mysql-table-engine=innodb \
+    --mysql-host=node1 \
+    --mysql-user=root \
+    --mysql-password=aTestPwd \
+    --mysql-db=repl_test \
+    --test=/opt/tests/db/update_index.lua \
+    --oltp-table-size=5000 \
+    --oltp-tables-count=8 \
+    --num-threads=8 \
+    --report-interval=1 \
+    --max-requests=10000 \
+    run'
+
+    5) using sysbench to do update query with node2.
+
+    docker run --rm -it --net=group1 \
+    percona/sysbench \
+    -c '/opt/sysbench/sysbench \
+    --test=oltp \
+    --db-driver=mysql \
+    --mysql-table-engine=innodb \
+    --mysql-host=node2 \
+    --mysql-user=root \
+    --mysql-password=aTestPwd \
+    --mysql-db=repl_test \
+    --test=/opt/tests/db/update_index.lua \
+    --oltp-table-size=5000 \
+    --oltp-tables-count=8 \
+    --num-threads=8 \
+    --report-interval=1 \
+    --max-requests=10000 \
+    run'
+
+    6) then you should see the sql error. "
+
+    ALERT: mysql_drv_query() for query 'UPDATE sbtest1 SET k=k+1 WHERE id=xxx' failed: 3101 Plugin instructed the server to rollback the current transaction.
+
+    7) but i can still sucess to run sysbench on node1.
+    [16 Feb 2017 12:53] MySQL Verification Team
+    Thank you for the details.
+    [16 Feb 2017 12:58] MySQL Verification Team
+    -- Setup GR, make sure there are more than one primary node in the GR
+
+    nod1> SELECT * FROM performance_schema.replication_group_members;
+    +---------------------------+--------------------------------------+-------------+-------------+--------------+
+    | CHANNEL_NAME              | MEMBER_ID                            | MEMBER_HOST | MEMBER_PORT | MEMBER_STATE |
+    +---------------------------+--------------------------------------+-------------+-------------+--------------+
+    | group_replication_applier | 2412f46a-f446-11e6-baa9-0010e05f3e06 | hod03       |        3306 | ONLINE       |
+    | group_replication_applier | 39882d2e-f446-11e6-9c9f-0010e05f4178 | hod04       |        3306 | ONLINE       |
+    | group_replication_applier | 3b3d8837-f446-11e6-b909-0010e0734b98 | hod06       |        3306 | ONLINE       |
+    +---------------------------+--------------------------------------+-------------+-------------+--------------+
+    3 rows in set (0.00 sec)
+
+    -- node 1 still running
+
+    [umshastr@hod03]~/bugs/sysbench1.0:   bin/sysbench  --max-requests=0 share/sysbench/oltp_update_index.lua --table_size=5000 --tables=8 --report-interval=3  --db-driver=mysql --mysql-user=root --mysql-db=test --mysql-socket=/tmp/mysql_hod03.sock prepare
+    [umshastr@hod03]~/bugs/sysbench1.0:   bin/sysbench  --max-requests=0 share/sysbench/oltp_update_index.lua --table_size=5000 --tables=8 --report-interval=3  --db-driver=mysql --mysql-user=root --mysql-db=test --mysql-socket=/tmp/mysql_hod03.sock prepare
+    sysbench 1.0.0 (using bundled LuaJIT 2.1.0-beta2)
+
+    Creating table 'sbtest1'...
+    Inserting 5000 records into 'sbtest1'
+    Creating secondary indexes on 'sbtest1'...
+    Creating table 'sbtest2'...
+    Inserting 5000 records into 'sbtest2'
+    Creating secondary indexes on 'sbtest2'...
+    Creating table 'sbtest3'...
+    Inserting 5000 records into 'sbtest3'
+    Creating secondary indexes on 'sbtest3'...
+    Creating table 'sbtest4'...
+    Inserting 5000 records into 'sbtest4'
+    Creating secondary indexes on 'sbtest4'...
+    Creating table 'sbtest5'...
+    Inserting 5000 records into 'sbtest5'
+    Creating secondary indexes on 'sbtest5'...
+    Creating table 'sbtest6'...
+    Inserting 5000 records into 'sbtest6'
+    Creating secondary indexes on 'sbtest6'...
+    Creating table 'sbtest7'...
+    Inserting 5000 records into 'sbtest7'
+    Creating secondary indexes on 'sbtest7'...
+    Creating table 'sbtest8'...
+    Inserting 5000 records into 'sbtest8'
+    Creating secondary indexes on 'sbtest8'...
+    [umshastr@hod03]~/bugs/sysbench1.0: bin/sysbench  --time=3600 --max-requests=0 share/sysbench/oltp_update_index.lua --table_size=5000 --tables=8 --report-interval=3  --db-driver=mysql --mysql-user=root --mysql-db=test --mysql-socket=/tmp/mysql_hod03.sock run
+    sysbench 1.0.0 (using bundled LuaJIT 2.1.0-beta2)
+
+    Running the test with following options:
+    Number of threads: 1
+    Report intermediate results every 3 second(s)
+    Initializing random number generator from current time
+
+    Initializing worker threads...
+
+    Threads started!
+
+    [ 3s ] thds: 1 tps: 5754.05 qps: 5754.05 (r/w/o: 0.00/772.76/4981.29) lat (ms,95%): 0.81 err/s: 0.00 reconn/s: 0.00
+    [ 6s ] thds: 1 tps: 4836.77 qps: 4836.77 (r/w/o: 0.00/627.72/4209.05) lat (ms,95%): 1.03 err/s: 0.00 reconn/s: 0.00
+    [ 9s ] thds: 1 tps: 4832.67 qps: 4832.67 (r/w/o: 0.00/636.00/4196.67) lat (ms,95%): 1.04 err/s: 0.00 reconn/s: 0.00
+
+    --node 2 failed
+
+    [umshastr@hod04]~/bugs/sysbench1.0: bin/sysbench  --time=3600 --max-requests=0 share/sysbench/oltp_update_index.lua --table_size=5000 --tables=8 --report-interval=3  --db-driver=mysql --mysql-user=root --mysql-db=test --mysql-socket=/tmp/mysql_hod04.sock run
+    sysbench 1.0.0 (using bundled LuaJIT 2.1.0-beta2)
+
+    Running the test with following options:
+    Number of threads: 1
+    Report intermediate results every 3 second(s)
+    Initializing random number generator from current time
+
+    Initializing worker threads...
+
+    Threads started!
+
+    FATAL: mysql_stmt_execute() returned error 3101 (Plugin instructed the server to rollback the current transaction.) for query 'UPDATE sbtest7 SET k=k+1 WHERE id=?'
+    FATAL: `thread_run' function failed: ...umshastr/bugs/sysbench1.0/share/sysbench/oltp_common.lua:447: SQL error, errno = 3101, state = 'HY000': Plugin instructed the server to rollback the current transaction.
+    Error in my_thread_global_end(): 1 threads didn't exit
+    [16 Feb 2017 13:08] Johanna Välimäki
+    Hi,
+
+    Just for everybody to know, that our case was discussed internally with MySQL as I could not reveal the code example in public. MySQL documentation has been updated to contain restrictions and we have changed our setup to single primary mode.
+
+    Our issue is still possible to be reproduced in multi primary mode, so I suppose Chris has found the same problem.
+    [17 Mar 2017 11:26] David Moss
+    Posted by developer:
+
+    Thanks for your feedback. This was fixed in 5.7.17. A change log entry was not added as this behaviour was in a labs version.
+    [28 Apr 2017 12:58] Sheraz Ahmed
+    We are using MySQL 5.7.17 in production and facing the exact same issue in multi-master group replication mode (even though write operations happen only on one node).
+
+    The situation is as follows:
+
+    One service frequently insert rows into a table. For each insert a separate connection is established with database. Its a single threaded service.
+
+    Another service fetch the records from database table, update them and saves them back. Again, its a single threaded service.
+
+    Every now and then, the update operation results in the following error: "MySql.Data.MySqlClient.MySqlException (0x80004005): Plugin instructed the server to rollback the current transaction".
+
+    I have read all the available documentation on group replication multiple times. There is absolutely no reason for this error to occur in the above mentioned situation at the best of my knowledge.
+
+    The bug reported in this ticket explains similar scenario. Is this bug really fixed in MySQL 5.7.17?
+    Legal Policies
+    Your Privacy Rights
+    Terms of Use
+    Contact Us
+
+    Portions of this website are copyright © 2001, 2002 The PHP Group
+    Page generated in 0.039 sec. using MySQL 8.0.21-commercial
+
+
+    Content reproduced on this site is the property of the respective copyright holders.
+    It is not reviewed in advance by Oracle and does not necessarily represent the opinion of Oracle or any other party.
+
+    © 2020, Oracle Corporation and/or its affiliates
+
+
+
+    deploy@PAX-face01:~$ cat mysql-mm-cluster.yaml
+    apiVersion: "mysql.oracle.com/v1"
+    kind: MySQLCluster
+    metadata:
+    name: mysql-mm # Mysql集群名字
+    namespace: infra
+    spec:
+    replicas: 3
+    multimaster: true
+    serverArgs:
+    innodb-buffer-pool-size: '4G'
+    innodb-flush-log-at-trx-commit: '2'
+    sync-binlog: '10'
+    max_connections:600
+
+    volumeClaimTemplate:
+    metadata:
+    name: data
+    spec:
+    storageClassName: mysql-sc
+    accessModes:
+    - ReadWriteMany
+    resources:
+    requests:
+    storage: 20Ti
+            </pre>
+</div>
+    </div>
+
+</body>
+</html>
