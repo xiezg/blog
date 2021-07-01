@@ -1,0 +1,146 @@
+<html>
+<head>
+    title></title>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/4.0.0/github-markdown.css">
+</head>
+<body>
+<div class="note_txt">
+    <h3 id="示例">示例</h3>
+    <p>word 和 WORD
+        <img src="https://www.barbarianmeetscoding.com/images/vim-motions-word-vs-WORD.jpg" alt="word/WORD"></p>
+    <h3 id="光标移动">光标移动</h3>
+    <table>
+        <thead>
+        <tr>
+            <th>范围</th>
+            <th>命令</th>
+            <th>动作</th>
+        </tr>
+        </thead>
+        <tbody><tr>
+            <td>word</td>
+            <td>w</td>
+            <td>移动到下一个单词开头</td>
+        </tr>
+        <tr>
+            <td>word</td>
+            <td>==2w==</td>
+            <td>向后跳转到第二个单词开头</td>
+        </tr>
+        <tr>
+            <td>word</td>
+            <td>b</td>
+            <td>移动到上一个单词开头</td>
+        </tr>
+        <tr>
+            <td>word</td>
+            <td>e</td>
+            <td>移动到单词结尾</td>
+        </tr>
+        <tr>
+            <td>word</td>
+            <td>ge</td>
+            <td>移动到上一个单词结尾</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>0</td>
+            <td>移动到行首（包括空字符）</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>$</td>
+            <td>移动到行尾（包括空字符）</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>^</td>
+            <td>移动到行首非空字符</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>g_</td>
+            <td>移动到行尾非空字符</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>f{character}</td>
+            <td>向后查找遇到的字符</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>==4f{character}==</td>
+            <td>向后查找遇到的第四个字符</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>F{character}</td>
+            <td>向前查找遇到的字符</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>t{character}</td>
+            <td>向后查找遇到的字符,并将光标放在单词前面</td>
+        </tr>
+        <tr>
+            <td>line</td>
+            <td>T{character}</td>
+            <td>向前查找遇到的字符,并将光标放在单词前面</td>
+        </tr>
+        <tr>
+            <td>段落</td>
+            <td>}</td>
+            <td>跳到下一个段落</td>
+        </tr>
+        <tr>
+            <td>段落</td>
+            <td>{</td>
+            <td>跳到下一个段落</td>
+        </tr>
+        <tr>
+            <td>页</td>
+            <td><c-d></c-d></td>
+            <td>向下滚动半页</td>
+        </tr>
+        <tr>
+            <td>页</td>
+            <td><c-u></c-u></td>
+            <td>向上滚动半页</td>
+        </tr>
+        <tr>
+            <td>文件</td>
+            <td>/{pattern}</td>
+            <td>向下搜索</td>
+        </tr>
+        <tr>
+            <td>文件</td>
+            <td>?{pattern}</td>
+            <td>向下搜索</td>
+        </tr>
+        <tr>
+            <td>文件</td>
+            <td>*</td>
+            <td>向下搜索当前光标下的单词</td>
+        </tr>
+        <tr>
+            <td>文件</td>
+            <td>gg</td>
+            <td>跳转到文件开头</td>
+        </tr>
+        <tr>
+            <td>文件</td>
+            <td>G</td>
+            <td>跳转到文件结尾</td>
+        </tr>
+        <tr>
+            <td>块</td>
+            <td>%</td>
+            <td>匹配(){}[]</td>
+        </tr>
+        </tbody></table>
+    <h3 id="编辑">编辑</h3>
+    <p>动作|操作</p>
+</div>
+</body>
+</html>

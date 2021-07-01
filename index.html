@@ -1,252 +1,264 @@
-<!DOCTYPE html>
-<html>
+    <!DOCTYPE html>
+    <html>
 
-<head>
-    <title></title>
-    <meta charset="utf-8">
-    <!-- 引入 ECharts 文件 -->
-    <!-- <script src="dist/echarts.min.js"></script> -->
-    <link rel="stylesheet" type="text/css" href="css/1.css"/>
-    <script src="js/mermaid.min.js"></script>
-    <script>
+    <head>
+        <title></title>
+        <meta charset="utf-8">
+        <!-- 引入 ECharts 文件 -->
+        <!-- <script src="dist/echarts.min.js"></script> -->
+        <link rel="stylesheet" type="text/css" href="css/1.css"/>
+<!--        <script src="js/mermaid.min.js"></script>-->
+        <script src="js/mermaid.js"></script>
+        <script>
 
+            function list_daily_task() {
 
-        function list_daily_task() {
+                var xhr = new XMLHttpRequest();
+                xhr.open("GET", "http://127.0.0.1:8081/daka/api/daily/task/list", true)
+                xhr.withCredentials = true;
+                xhr.send(null);
 
-            var xhr = new XMLHttpRequest();
-            xhr.open("GET", "http://127.0.0.1:8081/daka/api/daily/task/list", true)
-            xhr.withCredentials = true;
-            xhr.send(null);
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
 
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4 && xhr.status == 200) {
+                        var obj = JSON.parse(xhr.responseText)
 
-                    var obj = JSON.parse(xhr.responseText)
+                        for (var item of obj.Data) {
+                            add_task(item.id, item.task_msg, item.task_date)
+                        }
 
-                    for (var item of obj.Data) {
-                        add_task(item.id, item.task_msg, item.task_date)
+                        mermaid.init()
                     }
                 }
             }
-        }
 
 
-        function get_task_txt(task_id, editor) {
+            function get_task_txt(task_id, editor) {
 
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "http://127.0.0.1:8081/daka/api/daily/task/list", true)
-            xhr.withCredentials = true;
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "http://127.0.0.1:8081/daka/api/daily/task/list", true)
+                xhr.withCredentials = true;
 
-            var req = {};
-            req.task_id = task_id;
-            xhr.send(JSON.stringify(req));
+                var req = {};
+                req.task_id = task_id;
+                xhr.send(JSON.stringify(req));
 
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState == 4 && xhr.status == 200) {
+                xhr.onreadystatechange = function () {
+                    if (xhr.readyState == 4 && xhr.status == 200) {
 
-                    var obj = JSON.parse(xhr.responseText)
-                    editor.value = obj.Data[0].task_msg;
+                        var obj = JSON.parse(xhr.responseText)
+                        editor.value = obj.Data[0].task_msg;
+                    }
                 }
             }
-        }
 
-        function set_task_txt(task_id, editor) {
-            var xhr = new XMLHttpRequest();
-            xhr.open("POST", "http://127.0.0.1:8081/daka/api/daily/task/set", true)
-            xhr.withCredentials = true;
+            function set_task_txt(task_id, editor) {
+                var xhr = new XMLHttpRequest();
+                xhr.open("POST", "http://127.0.0.1:8081/daka/api/daily/task/set", true)
+                xhr.withCredentials = true;
 
-            var req = {};
-            req.task_id = task_id;
-            req.task_msg = editor.value;
-            xhr.send(JSON.stringify(req));
-        }
-
-        function renderMermaid() {
-            mermaid.init(undefined, document.querySelectorAll(".mermaid"));
-        }
-
-        function enable_gantt_edit(taskid, obj) {
-
-            var old = obj.style.display
-
-            if (old == "none" || old == "") {
-
-                get_task_txt(taskid, obj.firstChild)
-                obj.style.display = "block";
-
-
-            } else {
-                obj.style.display = "none"
-            }
-        }
-
-        function DateDiffNow(sDate1) {    //sDate1和sDate2是2006-12-18格式
-
-            var aDate, oDate1, oDate2, iDays
-            oDate1 = new Date("2020-11-16");
-
-            aDate = sDate1.split("-")
-            oDate2 = new Date(aDate[0] + '-' + aDate[1] + '-' + aDate[2])
-            iDays = parseInt(Math.abs(oDate1 - oDate2) / 1000 / 60 / 60 / 24) //把相差的毫秒数转换为天数
-
-//            return iDays
-            return parseInt(iDays / 30) + "M " + iDays % 30 + "d"
-        }
-
-        function add_task(task_id, task_txt, task_date) {
-
-            var mermaiddiv = document.createElement("div");
-            mermaiddiv.setAttribute("class", "mermaid");
-            mermaiddiv.textContent = task_txt;
-            mermaiddiv.setAttribute("id", task_id)
-
-            var btn = document.createElement("button");
-            btn.setAttribute("type", "button")
-            btn.setAttribute("onclick", "enable_gantt_edit(this.task_id,this.gannt_edit)")
-            btn.innerText = "编辑"
-
-            var divTitle = document.createElement("div")
-            divTitle.setAttribute("class", "ganntTitle")
-            divTitle.innerText = task_date + " " + DateDiffNow(task_date);
-
-            var div1 = document.createElement("div")
-            div1.style = "float:right;"
-
-            div1.appendChild(btn)
-
-            var rightDiv = document.createElement("div")
-            rightDiv.appendChild(divTitle)
-            rightDiv.appendChild(div1)
-            rightDiv.appendChild(mermaiddiv)
-            rightDiv.setAttribute("class", "right")
-
-            var leftDiv = document.createElement("div")
-            leftDiv.setAttribute("class", "gannt_edit left")
-
-            leftDiv.addEventListener("keyup", function (event) {
-                if (event.code != "Escape") {
-                    return
-                }
-
-                leftDiv.style.display = "none"
-            })
-
-            var editor = document.createElement("textarea");
-
-            editor.oninput = function (event) {
-                set_task_txt(task_id, editor);
-
-//                var element = document.getElementById( task_id )
-//                var rst = mermaid.render(element.id, editor.value, function(svgCode,bindFunctions){
-//                    console.log(svgCode)
-//                    element.innerHTML = svgCode
-//
-//                    var newobj = document.createElement("div");
-//                    newobj.setAttribute("class", "mermaid");
-//                    newobj.innerHTML = svgCode;
-//                    newobj.setAttribute("id", element.id)
-//                    rightDiv.appendChild(newobj)
-//                })
-
+                var req = {};
+                req.task_id = task_id;
+                req.task_msg = editor.value;
+                xhr.send(JSON.stringify(req));
             }
 
-            rightDiv.addEventListener("dblclick", function () {
-                get_task_txt(task_id, editor)
-                leftDiv.style.display = "block"
-            })
+            function renderMermaid() {
+                mermaid.init(undefined, document.querySelectorAll(".mermaid"));
+            }
 
-            rightDiv.addEventListener("keyup", function (event) {
-                if (event.code != "Escape") {
-                    return
-                }
+            function enable_gantt_edit(taskid, obj) {
 
-                leftDiv.style.display = "none"
-            })
+                var old = obj.style.display
 
-            leftDiv.appendChild(editor)
-
-            btn.gannt_edit = leftDiv;
-            btn.task_id = task_id;
-
-            var conDiv = document.createElement("div")
-            conDiv.setAttribute("class", "gantt_item container")
-            conDiv.appendChild(leftDiv)
-            conDiv.appendChild(rightDiv)
-
-            //document.getElementById("taskList").insertBefore(conDiv, document.getElementById("taskList").firstChild)
-
-            document.getElementById("taskList").appendChild(conDiv)
-            mermaid.init()
-        }
-
-        function login() {
-            var xhr = new XMLHttpRequest();
-            xhr.withCredentials = true;
-            xhr.open("POST", "http://127.0.0.1:8081/daka/api/login", true)
-            xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
-            // xhr.setRequestHeader( "Access-Control-Allow-Origin", "*" )
-            xhr.send("name=123&password=123");
-
-            xhr.onreadystatechange = function () {
-
-                if (xhr.readyState == 4 && xhr.status == 200) {
-                    list_daily_task()
+                if (old == "none" || old == "") {
+                    get_task_txt(taskid, obj.firstChild)
+                    obj.style.display = "block";
+                } else {
+                    obj.style.display = "none"
                 }
             }
-        }
 
-        window.onload = function () {
+            function DateDiffNow(sDate1, beginDate) {    //sDate1和sDate2是2006-12-18格式
 
-            mermaid.initialize({
-                startOnLoad: false,
-                logLevel: 1,
-                gantt: {
-                    axisFormat: '%m/%d',
+                var aDate, oDate1, oDate2, iDays
+                oDate1 = new Date(beginDate);
+
+                aDate = sDate1.split("-")
+                oDate2 = new Date(aDate[0] + '-' + aDate[1] + '-' + aDate[2])
+                iDays = parseInt(Math.abs(oDate1 - oDate2) / 1000 / 60 / 60 / 24) //把相差的毫秒数转换为天数
+
+    //            return iDays
+                return parseInt(iDays / 30) + "M " + iDays % 30 + "d"
+            }
+
+            function add_task(task_id, task_txt, task_date) {
+
+                var mermaiddiv = document.createElement("div");
+                mermaiddiv.setAttribute("class", "mermaid");
+                mermaiddiv.textContent = task_txt;
+                mermaiddiv.setAttribute("id", task_id)
+
+                var btn = document.createElement("button");
+                btn.setAttribute("type", "button")
+                btn.setAttribute("onclick", "enable_gantt_edit(this.task_id,this.gannt_edit)")
+                btn.innerText = "编辑"
+
+                var divTitle = document.createElement("div")
+                divTitle.setAttribute("class", "ganntTitle")
+                divTitle.innerText = task_date + " " + DateDiffNow(task_date, "2020-11-16") + " ❤️" + DateDiffNow( "2021-09-14", task_date);
+
+                var div1 = document.createElement("div")
+                div1.style = "float:right;"
+
+                div1.appendChild(btn)
+
+                var rightDiv = document.createElement("div")
+                rightDiv.appendChild(divTitle)
+                rightDiv.appendChild(div1)
+                rightDiv.appendChild(mermaiddiv)
+                rightDiv.setAttribute("class", "right")
+
+                var leftDiv = document.createElement("div")
+                leftDiv.setAttribute("class", "gannt_edit left")
+
+                leftDiv.addEventListener("keyup", function (event) {
+                    if (event.code != "Escape") {
+                        return
+                    }
+
+                    leftDiv.style.display = "none"
+                })
+
+                var editor = document.createElement("textarea");
+
+                editor.oninput = function (event) {
+                    set_task_txt(task_id, editor);
+                    var element = document.getElementById( task_id )
+
+                    console.log( element.firstChild.id )
+
+                    var rst = mermaid.render( element.firstChild.id, editor.value, function(svgCode){
+                       console.log(svgCode)
+                       element.innerHTML = svgCode
+
+                       // var newobj = document.createElement("div");
+                       // newobj.setAttribute("class", "mermaid");
+                       // newobj.innerHTML = svgCode;
+                       // newobj.setAttribute("id", element.id)
+                       // rightDiv.appendChild(newobj)
+                   },document.getElementById("temp_123"))
                 }
-            });
 
-            login()
-        }
-    </script>
+                rightDiv.addEventListener("dblclick", function () {
+                    get_task_txt(task_id, editor)
+                    leftDiv.style.display = "block"
+                })
 
-</head>
+                rightDiv.addEventListener("keyup", function (event) {
+                    if (event.code != "Escape") {
+                        return
+                    }
 
-<body>
-<div style="height: 30px"></div>
-<div class="container">
-    <div class="left" style="width: 10%"></div>
-    <div class="gantt_body right">
-        <div class="mermaid gantt_overall">
-            gantt
-            dateFormat YYYY-MM-DD
-            excludes weekends
-            axisFormat %m/%d
+                    leftDiv.style.display = "none"
+                })
 
-            section C++ SDK
-            SDK第二版:crit,done, 2021-04-06,6d
-            SDK添加日志、错误处理:2021-04-06,1d
-            SDK添加memory/local cache:1d
-            SDK添加整体内容变化通知:1d
-            SDK添加KV字段变化通知:1d
-            SDK添加YAML字段变化通知:1d
-            SDK添加YAML字段变化通知:1d
+                leftDiv.appendChild(editor)
 
-            SDK测试:1d
+                btn.gannt_edit = leftDiv;
+                btn.task_id = task_id;
+
+                var conDiv = document.createElement("div")
+                conDiv.setAttribute("class", "gantt_item container")
+                conDiv.appendChild(leftDiv)
+                conDiv.appendChild(rightDiv)
+
+                //document.getElementById("taskList").insertBefore(conDiv, document.getElementById("taskList").firstChild)
+
+                document.getElementById("taskList").appendChild(conDiv)
+                //mermaid.init()
+            }
+
+            function login() {
+                var xhr = new XMLHttpRequest();
+                xhr.withCredentials = true;
+                xhr.open("POST", "http://127.0.0.1:8081/daka/api/login", true)
+                xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded")
+                // xhr.setRequestHeader( "Access-Control-Allow-Origin", "*" )
+                xhr.send("name=123&password=123");
+
+                xhr.onreadystatechange = function () {
+
+                    if (xhr.readyState == 4 && xhr.status == 200) {
+                        list_daily_task()
+                    }
+                }
+            }
+
+            window.onload = function () {
+
+                mermaid.initialize({
+                    startOnLoad: false,
+                    logLevel: 1,
+                    gantt: {
+                        axisFormat: '%m/%d',
+                    }
+                });
+
+                login()
+
+                setTimeout('mermaid.init()',5000);
+            }
+        </script>
+
+    </head>
+
+    <body>
+    <div style="height: 30px"></div>
+    <div class="container">
+        <div class="left" style="width: 10%"></div>
+        <div class="gantt_body right">
+            <div class="mermaid gantt_overall">
+                gantt
+                dateFormat YYYY-MM-DD
+                excludes weekends
+                axisFormat %x %j
+
+                section Atlas平台配置中心 SDK
+                c SDK :crit,done,2021-04-01,2021-10-01
+                python SDK :crit,done,2021-04-01,2021-10-01
+                #SDK第二版:crit,done, 2021-04-06,6d
+                #SDK添加日志、错误处理:2021-04-06,1d
+                #SDK添加memory/local cache:done,1d
+                #SDK添加整体内容变化通知:done,2021-04-1d
+                #SDK添加KV字段变化通知:done,1d
+                #SDK测试:1d
+
+                #section MySQL主从方案优化
+                #方案参数化: done,2021-04-01,1d
+                #修复备份清理策略:done,1d
+                #确认目前方案存在的问题，并落实到文档 mysqlfailover解决单点问题(etcd选主):done,2021-04-19,1d
+                #调研pt-table-checksum、pt-table-sync:7d
+
+                section MySQL
+                mysql cluster:crit,done,2021-04-01,2021-10-01
+
+                section redis
+                redis:crit,done,2021-04-01,2021-10-01
+
+                section dist-KV
+                TiKV:crit,done,2021-04-01,2021-10-01
 
 
-            section MySQL主从方案优化
-            方案参数化: 2021-04-01,1d
-            修复备份清理策略:1d
+            </div>
+            <div id="temp_123"></div>
+            <div id="taskList" class="gantt_list">
 
+            </div>
 
         </div>
-        <div id="taskList" class="gantt_list">
-
-        </div>
-
     </div>
-</div>
 
-</body>
+    </body>
 
-</html>
+    </html>

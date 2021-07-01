@@ -5,8 +5,10 @@
     <title></title>
     <meta charset="utf-8">
     <link rel="stylesheet" type="text/css" href="css/note.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="js/markdown-it.js"></script>
+
     <script>
+        var md = window.markdownit();
 
         function update_note( id, title, keyword, txt ){
             var xhr = new XMLHttpRequest();
@@ -33,7 +35,7 @@
 
             var note_txt = document.createElement('div')
             note_txt.setAttribute( "class", "note_txt" );
-            note_txt.innerHTML = marked( obj.html );
+            note_txt.innerHTML = md.render( obj.txt );
 
             var note_keyword = document.createElement('div')
             note_keyword.setAttribute( "class", "note_keyword" );
@@ -58,7 +60,7 @@
 
             var textarea = document.createElement('textarea')
             textarea.oninput = function (event) {
-                note_txt.innerHTML = marked( textarea.value );
+                note_txt.innerHTML = md.render( textarea.value );
             }
 
             var note_editor = document.createElement('div')
